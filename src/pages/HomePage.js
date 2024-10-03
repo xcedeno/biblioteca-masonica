@@ -1,40 +1,38 @@
-// HomePage.js
-import React, { useEffect, useState } from 'react';
-import { auth, firestore } from '../firebase';
-import { collection, query, where, getDocs } from "firebase/firestore"; // Importa las funciones necesarias
-import BookCard from '../components/BookCard';
+import React from 'react';
+import { useLocation } from 'react-router-dom'; // Para recibir el grado del usuario desde el estado
 
 const HomePage = () => {
-  const [books, setBooks] = useState([]);
-  //const [user, setUser] = useState(null);
+  const location = useLocation();
+  const { userGrade } = location.state || {}; // Obtener el grado del usuario
 
-  useEffect(() => {
-    const fetchBooks = async () => {
-      const currentUser = auth.currentUser;
+  const categories = [
+    { name: 'Arte', minGrade: 'aprendiz' },
+    { name: 'Ciencia', minGrade: 'compañero' },
+    { name: 'Tecnología', minGrade: 'compañero' },
+    { name: 'Filosofía', minGrade: 'aprendiz' },
+    { name: 'Historia Universal', minGrade: 'maestro' },
+    { name: 'Historia de Venezuela', minGrade: 'aprendiz' },
+  ];
 
-      if (!currentUser) return; // Asegúrate de que hay un usuario autenticado
+  const getGradeLevel = (grade) => {
+    const levels = { 'aprendiz': 1, 'compañero': 2, 'maestro': 3 };
+    return levels[grade] || 0;
+  };
 
-      const userDoc = await getDocs(query(collection(firestore, 'users'), where('uid', '==', currentUser.uid)));
-      const userData = userDoc.docs[0]?.data();
-      const userGrado = userData?.grado;
-
-      if (userGrado) {
-        const booksSnapshot = await getDocs(query(collection(firestore, 'books'), where('grado', '<=', userGrado)));
-        const booksList = booksSnapshot.docs.map(doc => doc.data());
-        setBooks(booksList);
-      }
-    };
-
-    fetchBooks();
-  }, []);
+  const userGradeLevel = getGradeLevel(userGrade);
 
   return (
-    <div>
-      <h1>Biblioteca Masonica</h1>
-      <div>
-        {books.map((book, index) => (
-          <BookCard key={index} book={book} />
-        ))}
+    <div className="home-page">
+      <h2>Bienvenido a la Biblioteca</h2>
+      <div className="categories">
+        {categories.map((category) =>
+          getGradeLevel(category.minGrade) <= userGradeLevel ? (
+            <div key={category.name} className="category-card">
+              <img src={`/images/${category.name.toLowerCase().replace(' ', '-')}.jpg`} alt={category.name} />
+              <h3>{category.name}</h3>
+            </div>
+          ) : null
+        )}
       </div>
     </div>
   );

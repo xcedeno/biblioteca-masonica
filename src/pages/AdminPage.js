@@ -1,67 +1,61 @@
 import React, { useState } from 'react';
 import Modal from 'react-modal';
-import { useNavigate } from 'react-router-dom'; // Importar useNavigate
+import { useNavigate } from 'react-router-dom';
 import grades from '../utils/grades';
+import { getUsers, addUser,  } from '../utils/auth'; // Importa addUser, getUsers y authenticateUser
 import './AdminPage.css';
 import masoneriaImage from '../assets/masoneria.png';
 
-const masterUser = {
-    username: 'master',
-    password: 'master',
-    grado: 0
-};
-
-localStorage.setItem('currentUser', JSON.stringify(masterUser));
-
-Modal.setAppElement('#root'); // Esto es necesario para accesibilidad
+Modal.setAppElement('#root');
 
 const AdminPage = () => {
-    const navigate = useNavigate(); // Instanciar useNavigate
+    const navigate = useNavigate();
     const [username, setUsername] = useState('');
     const [fullName, setFullName] = useState('');
     const [password, setPassword] = useState('');
     const [grado, setGrado] = useState('');
-    const [editingIndex, setEditingIndex] = useState(null); // Para el índice de edición
-    const [users, setUsers] = useState(JSON.parse(localStorage.getItem('users')) || []);
-    const [isModalOpen, setIsModalOpen] = useState(false); // Controla la apertura del modal
+    const [editingIndex, setEditingIndex] = useState(null); 
+    const [users, setUsers] = useState(getUsers()); // Fetch the users from utils.js
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Función para verificar el usuario actual
+    const checkCurrentUser = () => {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        return currentUser && currentUser.grado === '0'; // Verifica si es el usuario maestro
+    };
 
     const handleCreateUser = (e) => {
         e.preventDefault();
-    
-        // Verifica que el usuario esté autenticado como Master User
-        const currentUser = JSON.parse(localStorage.getItem('currentUser')); // Simula autenticación
-        if (!currentUser || currentUser.grado !== 0) {
+
+        if (!checkCurrentUser()) {
             alert('No tienes permisos para crear usuarios');
             return;
         }
-    
-        // Verifica si el usuario ya existe
+
         const existingUser = users.find(user => user.username === username);
         if (existingUser) {
             alert('El usuario ya existe');
             return;
         }
-    
-        // Agrega el nuevo usuario a la lista
+
         const newUser = {
             username,
-            password, // Esto debería ser hasheado antes de guardarlo
-            grado: parseInt(grado),
+            fullName,
+            password,
+            grado: parseInt(grado)
         };
-        
-        const updatedUsers = [...users, newUser];
-        localStorage.setItem('users', JSON.stringify(updatedUsers)); // Guardar en localStorage
-        setUsers(updatedUsers); // Actualiza el estado de usuarios
-    
-        // Limpia los campos después de crear el usuario
-        setUsername(''); // Limpia el campo de nombre de usuario
-        setPassword(''); // Limpia el campo de contraseña
-        setGrado(''); // Limpia el campo de grado
+
+        addUser(newUser); // Añade el nuevo usuario a la lista en utils.js
+        setUsers(getUsers()); // Actualiza el estado con la nueva lista de usuarios
+
+        // Reinicia los campos del formulario
+        setUsername('');
+        setPassword('');
+        setGrado('');
         setFullName('');
-    
+
         alert('Usuario creado con éxito');
     };
-    
 
     const handleOpenModal = (index) => {
         const user = users[index];

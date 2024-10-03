@@ -10,20 +10,24 @@ const LoginPage = () => {
     const navigate = useNavigate();
 
     const handleLogin = (e) => {
-        e.preventDefault();
-        
-        const user = authenticateUser(username, password);
-        
-        if (user) {
-            if (user.grado === "0") { // Verifica si es el usuario master
-                navigate('/admin'); // Redirige a la página del administrador
-            } else {
-                alert('Acceso denegado: no tiene permisos suficientes.');
-            }
-        } else {
-            alert('Usuario o contraseña incorrectos');
-        }
-    };
+      e.preventDefault();
+  
+      const user = authenticateUser(username, password);
+  
+      if (user) {
+          localStorage.setItem('currentUser', JSON.stringify(user)); // Guarda el usuario en el localStorage
+  
+          if (user.isMaster) { // Verifica si es el usuario master
+              navigate('/admin'); // Redirige a la página del administrador
+          } else {
+              navigate('/home'); // Redirige a la página de inicio
+          }
+      } else {
+          alert('Usuario o contraseña incorrectos');
+      }
+  };
+  
+  
 
     return (
         <div className="login-container">

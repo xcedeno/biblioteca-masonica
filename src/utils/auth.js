@@ -1,25 +1,21 @@
-const users = [
-    {
-        username: "master",
-        password: "master",
-        grado: "0" // Grado para el usuario master
-    },
-    {
-        username: "user1",
-        password: "password1",
-        grado: "1" // Otro usuario con un grado diferente
-    },
-    // Puedes agregar más usuarios aquí si es necesario
-];
+let users = JSON.parse(localStorage.getItem('users')) || []; // Cargar los usuarios desde localStorage
 
 export const authenticateUser = (username, password) => {
-    const user = users.find(
-        (user) => user.username === username && user.password === password
-    );
+    return users.find(user => user.username === username && user.password === password);
+};
 
-    if (user) {
-        return user; // Devuelve el usuario si la autenticación es exitosa
-    } else {
-        throw new Error("Usuario o contraseña incorrectos");
+export const addUser = (newUser) => {
+    const existingUser = users.find(user => user.username === newUser.username);
+    
+    if (existingUser) {
+        alert('El usuario ya existe');
+        return; // Si el usuario ya existe, no lo agrega
     }
+
+    users.push(newUser); // Agrega el nuevo usuario al arreglo de usuarios
+    localStorage.setItem('users', JSON.stringify(users)); // Guarda la lista actualizada en localStorage
+};
+
+export const getUsers = () => {
+    return users; // Retorna la lista de usuarios
 };
