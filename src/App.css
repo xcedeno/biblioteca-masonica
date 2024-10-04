@@ -90,3 +90,42 @@ body {
   background-color: #218838;
 }
 
+.home-page {
+  padding: 20px;
+  text-align: center;
+}
+
+.categories {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20px; /* Espacio entre las tarjetas */
+  margin-top: 20px;
+}
+
+.category-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+  transition: transform 0.3s;
+  width: 180px; /* Ajustar el tamaño de las tarjetas */
+  text-align: center;
+}
+
+.category-card img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.category-card:hover {
+  transform: scale(1.05); /* Efecto de zoom al pasar el ratón */
+}
+
+h3 {
+  margin-top: 10px;
+  font-size: 1.2rem;
+  color: #333;
+}
+

@@ -1,33 +1,31 @@
 import React, { useState } from 'react';
-import { authenticateUser } from '../utils/auth'; // Asegúrate de que esta línea sea correcta
-import masoneriaImage from '../assets/masoneria.png'; // Ajusta la ruta según donde esté tu imagen
+import { authenticateUser } from '../utils/auth'; // Importa la autenticación desde Firestore
+import masoneriaImage from '../assets/masoneria.png'; // Asegúrate de que la ruta de la imagen sea correcta
 import { useNavigate } from 'react-router-dom';
-import './LoginPage.css'; // Importa el archivo de estilos CSS
+import './LoginPage.css'; // Asegúrate de tener el archivo CSS
 
 const LoginPage = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
 
-    const handleLogin = (e) => {
-      e.preventDefault();
-  
-      const user = authenticateUser(username, password);
-  
-      if (user) {
-          localStorage.setItem('currentUser', JSON.stringify(user)); // Guarda el usuario en el localStorage
-  
-          if (user.isMaster) { // Verifica si es el usuario master
-              navigate('/admin'); // Redirige a la página del administrador
-          } else {
-              navigate('/home'); // Redirige a la página de inicio
-          }
-      } else {
-          alert('Usuario o contraseña incorrectos');
-      }
-  };
-  
-  
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        
+        const user = await authenticateUser(username, password); // Asegúrate de usar await
+        
+        if (user) {
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            
+            if (user.grado === "0") {
+                navigate('/admin'); // Redirige a la página del administrador
+            } else {
+                navigate('/home'); // Redirige a la página de inicio
+            }
+        } else {
+            alert('Usuario o contraseña incorrectos');
+        }
+    };
 
     return (
         <div className="login-container">

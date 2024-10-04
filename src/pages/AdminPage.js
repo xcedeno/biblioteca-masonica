@@ -1,218 +1,169 @@
-import React, { useState } from 'react';
-import Modal from 'react-modal';
+import React, { useState, useEffect } from 'react';
+import { db } from '../utils/firebase';
+import { collection, addDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
-import grades from '../utils/grades';
-import { getUsers, addUser,  } from '../utils/auth'; // Importa addUser, getUsers y authenticateUser
 import './AdminPage.css';
-import masoneriaImage from '../assets/masoneria.png';
-
-Modal.setAppElement('#root');
 
 const AdminPage = () => {
+    const [newUsername, setNewUsername] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [newGrade, setNewGrade] = useState('1'); // Default to Aprendiz (1)
+    const [fullName, setFullName] = useState(''); // State for full name
+    const [users, setUsers] = useState([]);
     const navigate = useNavigate();
-    const [username, setUsername] = useState('');
-    const [fullName, setFullName] = useState('');
-    const [password, setPassword] = useState('');
-    const [grado, setGrado] = useState('');
-    const [editingIndex, setEditingIndex] = useState(null); 
-    const [users, setUsers] = useState(getUsers()); // Fetch the users from utils.js
-    const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // Función para verificar el usuario actual
-    const checkCurrentUser = () => {
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        return currentUser && currentUser.grado === '0'; // Verifica si es el usuario maestro
-    };
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
 
-    const handleCreateUser = (e) => {
-        e.preventDefault();
-
-        if (!checkCurrentUser()) {
-            alert('No tienes permisos para crear usuarios');
-            return;
+    useEffect(() => {
+        if (!currentUser || currentUser.grado !== "0") {
+            alert("Acceso denegado. No tienes permisos para acceder a esta página.");
+            navigate('/home');
+        } else {
+            fetchUsers();
         }
+    }, [currentUser, navigate]);
 
-        const existingUser = users.find(user => user.username === username);
-        if (existingUser) {
-            alert('El usuario ya existe');
-            return;
-        }
-
-        const newUser = {
-            username,
-            fullName,
-            password,
-            grado: parseInt(grado)
-        };
-
-        addUser(newUser); // Añade el nuevo usuario a la lista en utils.js
-        setUsers(getUsers()); // Actualiza el estado con la nueva lista de usuarios
-
-        // Reinicia los campos del formulario
-        setUsername('');
-        setPassword('');
-        setGrado('');
-        setFullName('');
-
-        alert('Usuario creado con éxito');
+    const fetchUsers = async () => {
+        const querySnapshot = await getDocs(collection(db, 'usuarios'));
+        const usersList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setUsers(usersList);
     };
 
-    const handleOpenModal = (index) => {
-        const user = users[index];
-        setUsername(user.username);
-        setFullName(user.fullName);
-        setPassword(user.password);
-        setGrado(user.grado);
-        setEditingIndex(index);
-        setIsModalOpen(true); // Abre el modal
-    };
-
-    const handleCloseModal = () => {
-        setIsModalOpen(false); // Cierra el modal
-        setEditingIndex(null); // Limpia el índice de edición
-    };
-
-    const handleEditUser = (e) => {
+    const handleCreateUser = async (e) => {
         e.preventDefault();
-
-        const updatedUsers = [...users];
-        updatedUsers[editingIndex] = { username, fullName, password, grado: parseInt(grado) };
-        setUsers(updatedUsers);
-        localStorage.setItem('users', JSON.stringify(updatedUsers));
-        setIsModalOpen(false); // Cierra el modal después de la edición
-        alert('Usuario actualizado con éxito');
+        try {
+            await addDoc(collection(db, 'usuarios'), {
+                username: newUsername,
+                password: newPassword,
+                grade: newGrade,
+                fullName: fullName, // Include full name
+                isMaster: newGrade === "0"
+            });
+            alert('Usuario creado exitosamente');
+            setNewUsername('');
+            setNewPassword('');
+            setFullName(''); // Clear full name input
+            fetchUsers();
+        } catch (error) {
+            console.error('Error al crear el usuario: ', error);
+            alert('Hubo un error al crear el usuario');
+        }
     };
 
-    const handleDeleteUser = (index) => {
-        const updatedUsers = users.filter((_, i) => i !== index);
-        setUsers(updatedUsers);
-        localStorage.setItem('users', JSON.stringify(updatedUsers));
-        alert('Usuario eliminado con éxito');
+    const handleDeleteUser = async (userId) => {
+        try {
+            await deleteDoc(doc(db, 'usuarios', userId));
+            alert('Usuario eliminado exitosamente');
+            fetchUsers();
+        } catch (error) {
+            console.error('Error al eliminar el usuario: ', error);
+            alert('Hubo un error al eliminar el usuario');
+        }
     };
 
     const handleLogout = () => {
         localStorage.removeItem('currentUser');
-        alert('Has cerrado sesión');
-        navigate('/login'); // Redirigir a la página de login
+        navigate('/login');
     };
+
+    const grades = [
+        { value: '1', label: 'Aprendiz' },
+        { value: '2', label: 'Compañero' },
+        { value: '3', label: 'Maestro' },
+        { value: '4', label: 'Maestro Secreto' },
+        { value: '5', label: 'Maestro Perfecto' },
+        { value: '6', label: 'Secretario Íntimo' },
+        { value: '7', label: 'Preboste y Juez' },
+        { value: '8', label: 'Intendente de los Edificios' },
+        { value: '9', label: 'Maestro Elegido de los Nueve' },
+        { value: '10', label: 'Ilustre Elegido de los Quince' },
+        { value: '11', label: 'Sublime Caballero Elegido' },
+        { value: '12', label: 'Gran Maestro Arquitecto' },
+        { value: '13', label: 'Real Arco de Salomón' },
+        { value: '14', label: 'Gran Elegido, Perfecto y Sublime Masón' },
+        { value: '15', label: 'Caballero de Oriente' },
+        { value: '16', label: 'Príncipe de Jerusalén' },
+        { value: '17', label: 'Caballero de Oriente y Occidente' },
+        { value: '18', label: 'Soberano Príncipe Rosacruz' },
+        { value: '19', label: 'Gran Pontífice' },
+        { value: '20', label: 'Venerable Gran Maestro' },
+        { value: '21', label: 'Noaquita o Caballero Prusiano' },
+        { value: '22', label: 'Caballero Real Hacha' },
+        { value: '23', label: 'Jefe del Tabernáculo' },
+        { value: '24', label: 'Príncipe del Tabernáculo' },
+        { value: '25', label: 'Caballero de la Serpiente de Bronce' },
+        { value: '26', label: 'Príncipe de la Misericordia' },
+        { value: '27', label: 'Caballero Comendador del Templo' },
+        { value: '28', label: 'Príncipe Adepto Real' },
+        { value: '29', label: 'Gran Escocés de San Andrés' },
+        { value: '30', label: 'Caballero Kadosh' },
+        { value: '31', label: 'Gran Inspector Inquisidor Comendador' },
+        { value: '32', label: 'Sublime Príncipe del Real Secreto' },
+        { value: '33', label: 'Soberano Gran Inspector General' },
+        { value: '0', label: 'Master (Solo uno permitido)' },
+    ];
 
     return (
         <div className="container">
-            <img src={masoneriaImage} alt="Masonería" className="masoneria-image" />
-            <h2>Crear Nuevo Usuario</h2>
+            <h1>Panel de Administración</h1>
             <form onSubmit={handleCreateUser}>
                 <input
                     type="text"
-                    placeholder="Nombre completo"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                />
-                <input
-                    type="text"
-                    placeholder="Nombre de usuario"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Nuevo nombre de usuario"
+                    value={newUsername}
+                    onChange={(e) => setNewUsername(e.target.value)}
                     required
                 />
                 <input
                     type="password"
-                    placeholder="Contraseña"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Nueva contraseña"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
                     required
                 />
-                <select
-                    value={grado}
-                    onChange={(e) => setGrado(e.target.value)}
+                <input
+                    type="text"
+                    placeholder="Nombre completo" // New field for full name
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
                     required
-                >
-                    <option value="" disabled>Selecciona Grado</option>
+                />
+                <select value={newGrade} onChange={(e) => setNewGrade(e.target.value)}>
                     {grades.map((grade) => (
-                        <option key={grade.number} value={grade.number}>
-                            {grade.name}
+                        <option key={grade.value} value={grade.value}>
+                            {grade.label}
                         </option>
                     ))}
                 </select>
                 <button type="submit">Crear Usuario</button>
             </form>
 
-            <div className="user-list">
-                <h3>Usuarios Agregados</h3>
-                <table className="user-table">
-                    <thead>
-                        <tr>
-                            <th>Nombre Completo</th>
-                            <th>Nombre de Usuario</th>
-                            <th>Grado</th>
-                            <th>Acciones</th> {/* Nueva columna para botones de acciones */}
+            <h2>Lista de Usuarios</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nombre de Usuario</th>
+                        <th>Nombre Completo</th> {/* New column for full name */}
+                        <th>Grado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {users.map((user) => (
+                        <tr key={user.id}>
+                            <td>{user.username}</td>
+                            <td>{user.fullName}</td> {/* Display full name */}
+                            <td>{grades.find(grade => grade.value === user.grade)?.label}</td>
+                            <td>
+                                <button style={{ backgroundColor: '#ffc107' }}>Editar</button>
+                                <button style={{ backgroundColor: '#dc3545' }} onClick={() => handleDeleteUser(user.id)}>Eliminar</button>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        {users.map((user, index) => (
-                            <tr key={index}>
-                                <td>{user.fullName}</td>
-                                <td>{user.username}</td>
-                                <td>{user.grado}</td>
-                                <td>
-                                    <button onClick={() => handleOpenModal(index)} className="edit-button">Editar</button>
-                                    <button onClick={() => handleDeleteUser(index)} className="delete-button">Eliminar</button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                    ))}
+                </tbody>
+            </table>
 
-            {/* Modal para editar el usuario */}
-            <Modal
-                isOpen={isModalOpen}
-                onRequestClose={handleCloseModal}
-                contentLabel="Editar Usuario"
-                className="Modal"
-                overlayClassName="Overlay"
-            >
-                <h2>Editar Usuario</h2>
-                <form onSubmit={handleEditUser}>
-                    <input
-                        type="text"
-                        placeholder="Nombre completo"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        required
-                    />
-                    <input
-                        type="text"
-                        placeholder="Nombre de usuario"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        required
-                    />
-                    <input
-                        type="password"
-                        placeholder="Contraseña"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
-                    <select
-                        value={grado}
-                        onChange={(e) => setGrado(e.target.value)}
-                        required
-                    >
-                        <option value="" disabled>Selecciona Grado</option>
-                        {grades.map((grade) => (
-                            <option key={grade.number} value={grade.number}>
-                                {grade.name}
-                            </option>
-                        ))}
-                    </select>
-                    <button type="submit">Actualizar Usuario</button>
-                </form>
-                <button onClick={handleCloseModal} className="close-modal-button">Cerrar</button>
-            </Modal>
-
-            <button onClick={handleLogout} className="logout-button">Cerrar Sesión</button>
+            <button className="logout-button" onClick={handleLogout}>Cerrar Sesión</button>
         </div>
     );
 };
