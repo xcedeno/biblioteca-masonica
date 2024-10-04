@@ -1,56 +1,85 @@
+/* Estilos generales para centrar el contenido */
 .container {
-    max-width: 800px;
-    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh; /* Hace que el contenedor ocupe toda la altura de la pantalla */
     text-align: center;
 }
 
-table {
+/* Estilo para centrar el formulario */
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 2rem; /* Espacio entre el formulario y la lista de usuarios */
+}
+
+form input, form select {
     width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
-
-thead {
-    background-color: #f0f0f0;
-}
-
-th, td {
-    border: 1px solid #ddd;
+    max-width: 300px; /* Limita el ancho de los campos */
     padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    border: 1px solid #ccc;
 }
 
-th {
+form button {
+    width: 100%;
+    max-width: 150px;
+    padding: 10px;
     background-color: #007bff;
     color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
 }
 
-.user-actions {
-    display: flex;
-    justify-content: space-around;
+form button:hover {
+    background-color: #0056b3;
+}
+
+/* Estilo para centrar la tabla */
+table {
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto; /* Centra la tabla */
+}
+
+table th, table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+
+table th {
+    background-color: #f8f9fa;
 }
 
 button {
-    padding: 10px 20px;
+    padding: 5px 10px;
     border: none;
     border-radius: 5px;
+    color: white;
     cursor: pointer;
-    transition: background-color 0.3s ease;
 }
 
 button:hover {
-    opacity: 0.9;
+    opacity: 0.8;
 }
 
 .logout-button {
-    background-color: #007bff;
-    color: white;
-    margin-top: 20px;
+    margin-top: 2rem;
+    background-color: #dc3545;
     padding: 10px 20px;
-    border: none;
     border-radius: 5px;
+    color: white;
     cursor: pointer;
+    border: none;
 }
 
 .logout-button:hover {
-    background-color: #0056b3;
+    background-color: #c82333;
 }

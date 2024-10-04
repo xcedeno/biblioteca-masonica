@@ -1,44 +1,60 @@
-import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom'; // Para la navegación
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './HomePage.css';
+import grades from '../utils/grades'; // Importar los grados
 
 const HomePage = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const { userGrade } = location.state || {}; // Obtener el grado del usuario
+  const [userGrade, setUserGrade] = useState(null);
+  const [userName, setUserName] = useState('');
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('currentUser')); // Obtener el usuario desde localStorage
+
+    if (user) {
+      setUserGrade(user.grade); // Establecer el grado del usuario
+      setUserName(user.username || 'Usuario'); // Establecer el nombre del usuario
+    } else {
+      alert('No hay usuario autenticado. Redirigiendo a inicio de sesión.');
+      navigate('/login'); // Redirigir a la página de inicio de sesión si no hay usuario
+    }
+  }, [navigate]);
+
+  // Verifica si se está cargando la información del usuario
+  if (userGrade === null) {
+    return <p>Cargando...</p>;
+  }
 
   const categories = [
-    { name: 'Arte', minGrade: 'aprendiz', route: '/arte' }, // Ruta para la página de Arte
-    { name: 'Ciencia', minGrade: 'compañero', route: '/ciencia' },
-    { name: 'Tecnología', minGrade: 'compañero', route: '/tecnologia' },
-    { name: 'Filosofía', minGrade: 'aprendiz', route: '/filosofia' },
-    { name: 'Historia Universal', minGrade: 'maestro', route: '/historia-universal' },
-    { name: 'Historia de Venezuela', minGrade: 'aprendiz', route: '/historia-venezuela' },
+    { name: 'Arte', route: '/arte' },
+    { name: 'Ciencia', route: '/ciencia' },
+    { name: 'Tecnología', route: '/tecnologia' },
+    { name: 'Filosofía', route: '/filosofia' },
+    { name: 'Historia Universal', route: '/historia-universal' },
+    { name: 'Historia de Venezuela', route: '/historia-venezuela' },
   ];
-
-  const getGradeLevel = (grade) => {
-    const levels = { 'aprendiz': 1, 'compañero': 2, 'maestro': 3 };
-    return levels[grade] || 0;
-  };
-
-  const userGradeLevel = getGradeLevel(userGrade);
 
   const handleCategoryClick = (route) => {
     navigate(route); // Navegar a la ruta de la categoría seleccionada
   };
 
+  // Obtener la etiqueta del grado desde grades.js
+  const userGradeLabel = grades.find(grade => grade.value === userGrade)?.label || 'Grado Desconocido';
+
   return (
     <div className="home-page">
-      <h2>Bienvenido a la Biblioteca</h2>
+      <h2>Bienvenido, {userName}!</h2>
+      <p>Tu grado es: {userGradeLabel}</p>
       <div className="categories">
-        {categories.map((category) =>
-          getGradeLevel(category.minGrade) <= userGradeLevel ? (
-            <div key={category.name} className="category-card" onClick={() => handleCategoryClick(category.route)}>
-              <img src={`/images/${category.name.toLowerCase().replace(' ', '-')}.jpg`} alt={category.name} />
-              <h3>{category.name}</h3>
-            </div>
-          ) : null
-        )}
+        {categories.map((category) => (
+          <div key={category.name} className="category-card" onClick={() => handleCategoryClick(category.route)}>
+            <img 
+              src={`/images/${category.name.toLowerCase().replace(' ', '-')}.jpg`} 
+              alt={category.name} 
+            />
+            <h3>{category.name}</h3>
+          </div>
+        ))}
       </div>
     </div>
   );
