@@ -1,8 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../utils/firebase';
-//import { grades } from '../utils/grades';
+import { db, storage } from '../utils/firebase'; // Importa Firebase storage
 import { collection, addDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // Importa métodos de Firebase Storage
 import { useNavigate } from 'react-router-dom';
+import {
+    Drawer,
+    List,
+    ListItem,
+    ListItemText,
+    IconButton,
+    AppBar,
+    Toolbar,
+    Typography,
+    Divider
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
 import './AdminPage.css';
 
 const AdminPage = () => {
@@ -10,7 +22,10 @@ const AdminPage = () => {
     const [newPassword, setNewPassword] = useState('');
     const [newGrade, setNewGrade] = useState('1'); // Default to Aprendiz (1)
     const [fullName, setFullName] = useState(''); // State for full name
+    const [profileImage, setProfileImage] = useState(null); // State para la imagen de perfil
+    const [imagePreview, setImagePreview] = useState(null); // State para la vista previa de la imagen
     const [users, setUsers] = useState([]);
+    const [drawerOpen, setDrawerOpen] = useState(false); // State for drawer open/close
     const navigate = useNavigate();
 
     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -25,25 +40,45 @@ const AdminPage = () => {
     }, [currentUser, navigate]);
 
     const fetchUsers = async () => {
-        const querySnapshot = await getDocs(collection(db, 'usuarios'));
-        const usersList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setUsers(usersList);
+        try {
+            const querySnapshot = await getDocs(collection(db, 'usuarios'));
+            const usersList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setUsers(usersList);
+        } catch (error) {
+            console.error('Error al obtener los usuarios: ', error);
+            alert('Hubo un error al obtener los usuarios');
+        }
+    };
+
+    // Manejo de subida de imagen a Firebase Storage
+    const uploadImage = async (file) => {
+        if (!file) return null;
+        const storageRef = ref(storage, `profileImages/${file.name}`);
+        await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(storageRef);
+        return downloadURL;
     };
 
     const handleCreateUser = async (e) => {
         e.preventDefault();
         try {
+            // Subir imagen de perfil si está seleccionada
+            const profileImageUrl = profileImage ? await uploadImage(profileImage) : null;
+
             await addDoc(collection(db, 'usuarios'), {
                 username: newUsername,
                 password: newPassword,
                 grade: newGrade,
                 fullName: fullName, // Include full name
+                profileImage: profileImageUrl, // URL de la imagen de perfil
                 isMaster: newGrade === "0"
             });
             alert('Usuario creado exitosamente');
             setNewUsername('');
             setNewPassword('');
-            setFullName(''); // Clear full name input
+            setFullName('');
+            setProfileImage(null); // Limpiar el input de imagen
+            setImagePreview(null); // Limpiar la vista previa
             fetchUsers();
         } catch (error) {
             console.error('Error al crear el usuario: ', error);
@@ -65,6 +100,30 @@ const AdminPage = () => {
     const handleLogout = () => {
         localStorage.removeItem('currentUser');
         navigate('/login');
+    };
+
+    const toggleDrawer = (open) => (event) => {
+        if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
+            return;
+        }
+        setDrawerOpen(open);
+    };
+
+    const handleMenuClick = (option) => {
+        switch (option) {
+            case 'addUser':
+                navigate('/admin');
+                break;
+            case 'addCategory':
+                navigate('/home');
+                break;
+            case 'addBook':
+                alert('Ir a agregar libro');
+                break;
+            default:
+                break;
+        }
+        setDrawerOpen(false);
     };
 
     const grades = [
@@ -101,70 +160,149 @@ const AdminPage = () => {
         { value: '31', label: 'Gran Inspector Inquisidor Comendador' },
         { value: '32', label: 'Sublime Príncipe del Real Secreto' },
         { value: '33', label: 'Soberano Gran Inspector General' },
-        { value: '0', label: 'Master (Solo uno permitido)' },
     ];
+
+    // Función para manejar el cambio de imagen
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setProfileImage(file);
+            setImagePreview(URL.createObjectURL(file)); // Crea la vista previa
+        } else {
+            setProfileImage(null);
+            setImagePreview(null); // Limpiar vista previa si no hay archivo
+        }
+    };
 
     return (
         <div className="container">
-            <h1>Panel de Administración</h1>
-            <form onSubmit={handleCreateUser}>
-                <input
-                    type="text"
-                    placeholder="Nuevo nombre de usuario"
-                    value={newUsername}
-                    onChange={(e) => setNewUsername(e.target.value)}
-                    required
-                />
-                <input
-                    type="password"
-                    placeholder="Nueva contraseña"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                />
-                <input
-                    type="text"
-                    placeholder="Nombre completo" // New field for full name
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                />
-                <select value={newGrade} onChange={(e) => setNewGrade(e.target.value)}>
-                    {grades.map((grade) => (
-                        <option key={grade.value} value={grade.value}>
-                            {grade.label}
-                        </option>
-                    ))}
-                </select>
-                <button type="submit">Crear Usuario</button>
-            </form>
+            {/* AppBar con el botón de menú */}
+            <AppBar position="static">
+                <Toolbar style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <IconButton
+                        edge="start"
+                        color="inherit"
+                        aria-label="menu"
+                        onClick={toggleDrawer(true)}
+                    >
+                        <MenuIcon />
+                    </IconButton>
+                    
+                </Toolbar>
+                <Typography variant="h6" style={{ flexGrow: 1, textAlign: 'center' }}>
+                        Panel de Administración
+                    </Typography>
+                
+            </AppBar>
 
-            <h2>Lista de Usuarios</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nombre de Usuario</th>
-                        <th>Nombre Completo</th> {/* New column for full name */}
-                        <th>Grado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {users.map((user) => (
-                        <tr key={user.id}>
-                            <td>{user.username}</td>
-                            <td>{user.fullName}</td> {/* Display full name */}
-                            <td>{grades.find(grade => grade.value === user.grade)?.label}</td>
-                            <td>
-                                <button style={{ backgroundColor: '#ffc107' }}>Editar</button>
-                                <button style={{ backgroundColor: '#dc3545' }} onClick={() => handleDeleteUser(user.id)}>Eliminar</button>
-                            </td>
+            {/* Drawer de navegación */}
+            <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
+                <div
+                    role="presentation"
+                    onClick={toggleDrawer(false)}
+                    onKeyDown={toggleDrawer(false)}
+                    style={{ width: 250 }}
+                >
+                    <List>
+                        <ListItem button onClick={() => handleMenuClick('addUser')}>
+                            <ListItemText primary="Agregar Usuario" />
+                        </ListItem>
+                        <ListItem button onClick={() => handleMenuClick('addCategory')}>
+                            <ListItemText primary="Agregar Categoría" />
+                        </ListItem>
+                        <ListItem button onClick={() => handleMenuClick('addBook')}>
+                            <ListItemText primary="Agregar Libro" />
+                        </ListItem>
+                    </List>
+                    <Divider />
+                    <List>
+                        <ListItem button onClick={handleLogout}>
+                            <ListItemText primary="Cerrar Sesión" />
+                        </ListItem>
+                    </List>
+                </div>
+            </Drawer>
+
+            {/* Contenido Principal */}
+            <div className="content">
+                <form onSubmit={handleCreateUser} className="create-user-form">
+                    <h2>Crear Nuevo Usuario</h2>
+                    {/* Input para cargar la imagen de perfil */}
+                <label>Imagen de perfil:</label>
+                <div>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange} // Manejo del cambio de imagen
+                    />
+                </div>
+                {imagePreview && (
+                    <div>
+                        <h4>Vista Previa de la Imagen:</h4>
+                        <img src={imagePreview} alt="Vista previa" style={{ width: '100px', height: '100px' }} />
+                    </div>
+                )}
+                    <input
+                        type="text"
+                        placeholder="Nuevo nombre de usuario"
+                        value={newUsername}
+                        onChange={(e) => setNewUsername(e.target.value)}
+                        required
+                    />
+                    <input
+                        type="password"
+                        placeholder="Nueva contraseña"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        required
+                    />
+                    <input
+                        type="text"
+                        placeholder="Nombre completo"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        required
+                    />
+                    <select value={newGrade} onChange={(e) => setNewGrade(e.target.value)}>
+                        {grades.map((grade) => (
+                            <option key={grade.value} value={grade.value}>
+                                {grade.label}
+                            </option>
+                        ))}
+                    </select>
+                    <button type="submit">Crear Usuario</button>
+                </form>
+
+                <h2>Lista de Usuarios</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre de Usuario</th>
+                            <th>Nombre Completo</th>
+                            <th>Grado</th>
+                            <th>Acciones</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
-
-            <button className="logout-button" onClick={handleLogout}>Cerrar Sesión</button>
+                    </thead>
+                    <tbody>
+                        {users.map((user) => (
+                            <tr key={user.id}>
+                                <td>{user.username}</td>
+                                <td>{user.fullName}</td>
+                                <td>{grades.find(grade => grade.value === user.grade)?.label}</td>
+                                <td>
+                                    <button className='edit-button'>Editar</button>
+                                    <button
+                                        className='delete-button'
+                                        onClick={() => handleDeleteUser(user.id)}
+                                    >
+                                        Eliminar
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };
