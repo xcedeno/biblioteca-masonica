@@ -1,15 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../utils/supabaseClient'; 
-import { useNavigate } from 'react-router-dom';
 import { grades } from '../utils/grades'; 
 import {
     Grid,
-    List,
-    ListItem,
-    ListItemText,
-    IconButton,
     Typography,
-    Divider,
     CircularProgress,
     Button,
     TextField,
@@ -18,7 +12,6 @@ import {
     Container,
     Paper,
 } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
 import './AdminPage.css';
 
 const AdminPage = () => {
@@ -28,7 +21,6 @@ const AdminPage = () => {
     const [fullName, setFullName] = useState('');
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
-    const navigate = useNavigate();
 
     useEffect(() => {
         fetchUsers();

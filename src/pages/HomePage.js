@@ -20,7 +20,6 @@ const HomePage = () => {
     }
   }, [navigate]);
 
-  // Verifica si se está cargando la información del usuario
   if (userGrade === null) {
     return <p>Cargando...</p>;
   }
@@ -38,13 +37,14 @@ const HomePage = () => {
     navigate(route); // Navegar a la ruta de la categoría seleccionada
   };
 
-  // Obtener la etiqueta del grado desde grades.js
   const userGradeLabel = grades.find(grade => grade.value === userGrade)?.label || 'Grado Desconocido';
 
   return (
     <div className="home-page">
-      <h2>Bienvenido, {userName}!</h2>
-      <p>Tu grado es: {userGradeLabel}</p>
+      <div className="welcome-message">
+        <h2>Bienvenido, {userName}!</h2>
+        <p>Tu grado es: {userGradeLabel}</p>
+      </div>
       <div className="categories">
         {categories.map((category) => (
           <div key={category.name} className="category-card" onClick={() => handleCategoryClick(category.route)}>

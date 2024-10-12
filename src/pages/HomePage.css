@@ -1,61 +1,122 @@
-h2 {
-  color: aqua;
+.home-page {
+  text-align: center;
+  padding: 2rem; /* Cambia el padding a unidades relativas */
 }
 
+.home-page h2 {
+  font-size: 2.5rem;
+  color: #333;
+}
 
-.home-page {
-  padding: 20px;
-  text-align: center;
+.home-page p {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
 }
 
 .categories {
   display: flex;
-  flex-wrap: nowrap;
-  overflow-x: auto; /* Permite hacer scroll horizontal */
+  justify-content: center; /* Alinear al centro */
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 1rem;
 }
 
 .category-card {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  margin: 10px;
-  padding: 10px;
-  min-width: 150px;
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  background-color: #fff;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
-  transition: transform 0.3s;
 }
 
+/* La imagen tiene transparencia inicial */
 .category-card img {
-  max-width: 100%;
-  height: 150px;
-  border-radius: 5px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.9; /* Aplicar transparencia completa */
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Cuando el cursor se acerca, se elimina la transparencia y se aplica zoom */
+.category-card:hover img {
+  opacity: 1; /* Eliminar transparencia */
+  transform: scale(1.1); /* Aplicar zoom */
 }
 
 .category-card:hover {
-  transform: scale(1.05); /* Efecto de zoom al pasar el ratón */
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
-.books-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.book-card {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  margin: 10px;
+/* Texto centrado con fondo oscuro transparente */
+.category-card h3 {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
   padding: 10px;
-  width: 200px;
-  text-align: center;
-}
-
-.book-card img {
-  max-width: 100%;
-  height: 250px;
-  border-radius: 5px;
-}
-
-.book-card h3 {
-  margin-top: 10px;
+  color: white;
   font-size: 1.2rem;
+  text-align: center;
+  width: 100%;
+}
+
+/* Hover en la tarjeta para escalar la imagen y eliminar la transparencia */
+
+.welcome-message {
+  margin-bottom: 30px;
+  font-family: 'Georgia', serif;
+}
+
+.welcome-message h2 {
+  font-size: 2.2rem;
+  color: #6a1b9a;
+}
+
+.welcome-message p {
+  font-size: 1.5rem;
+  color: #333;
+}
+
+/* Media Query para pantallas pequeñas (móviles) */
+@media (max-width: 600px) {
+  .home-page h2 {
+    font-size: 1.8rem;
+  }
+
+  .home-page p {
+    font-size: 1rem;
+  }
+
+  .categories {
+    flex-direction: column; /* Alinear categorías en columna */
+    gap: 10px; /* Reducir el espacio entre categorías */
+  }
+
+  .category-card {
+    width: 100%; /* Usar el 100% del ancho disponible */
+    max-width: 300px;
+  }
+}
+
+/* Media Query para pantallas medianas (tabletas) */
+@media (min-width: 601px) and (max-width: 1024px) {
+  .home-page h2 {
+    font-size: 2rem;
+  }
+
+  .home-page p {
+    font-size: 1.1rem;
+  }
+
+  .category-card {
+    max-width: 150px; /* Reducir el tamaño en tabletas */
+  }
 }

@@ -34,7 +34,7 @@ export const grades = [
     { value: '31', label: 'Gran Inspector Inquisidor Comendador' },
     { value: '32', label: 'Sublime Príncipe del Real Secreto' },
     { value: '33', label: 'Soberano Gran Inspector General' },
-    { value: '0', label: 'Master (Solo uno permitido)' }
+    
 ];
 
 
