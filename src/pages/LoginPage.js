@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { db } from '../utils/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { supabase } from '../utils/supabaseClient'; // Importa el cliente de Supabase
 import masoneriaImage from '../assets/masoneria.png';
 import { useNavigate } from 'react-router-dom';
 import './LoginPage.css';
@@ -12,42 +11,20 @@ const LoginPage = () => {
 
     const authenticateUser = async (username, password) => {
         try {
-            const usersCollection = collection(db, 'usuarios');
-            const masterCollection = collection(db, 'users');
+            const { data, error } = await supabase
+                .from('users') // La tabla de usuarios
+                .select('*')
+                .eq('username', username)
+                .single(); // Obtiene un único registro
 
-            // Verificar si el usuario existe en la colección de usuarios
-            const userQuery = query(usersCollection, where('username', '==', username));
-            const userSnapshot = await getDocs(userQuery);
+            if (error) throw error; // Lanza error si ocurre
 
-            if (!userSnapshot.empty) {
-                const userDoc = userSnapshot.docs[0];
-                const userData = userDoc.data();
-
-                // Comprobar la contraseña
-                if (userData.password === password) {
-                    return userData; // Usuario autenticado correctamente
-                } else {
-                    return null; // Contraseña incorrecta
-                }
+            // Comprobar la contraseña
+            if (data && data.password === password) {
+                return data; // Usuario autenticado correctamente
+            } else {
+                return null; // Contraseña incorrecta
             }
-
-            // Verificar si el usuario existe en la colección de masters
-            const masterQuery = query(masterCollection, where('username', '==', username));
-            const masterSnapshot = await getDocs(masterQuery);
-
-            if (!masterSnapshot.empty) {
-                const masterDoc = masterSnapshot.docs[0];
-                const masterData = masterDoc.data();
-
-                // Comprobar la contraseña para el master
-                if (masterData.password === password) {
-                    return { ...masterData, isMaster: true }; // Master autenticado correctamente
-                } else {
-                    return null; // Contraseña incorrecta
-                }
-            }
-
-            return null; // Usuario no encontrado en ninguna colección
 
         } catch (error) {
             console.error('Error during authentication:', error);
@@ -59,15 +36,17 @@ const LoginPage = () => {
         e.preventDefault();
 
         const user = await authenticateUser(username, password);
+        
+        console.log("Usuario autenticado:", user); // Log para ver el usuario autenticado
 
         if (user) {
             // Almacenar el usuario en localStorage
             localStorage.setItem('currentUser', JSON.stringify(user));
 
-            // Redirigir según el tipo de usuario
-            if (user.isMaster) {
-                navigate('/admin', { state: { userGrade: user.grade } });
-            } else if (user.grade === '0') {
+            // Verifica el grado y redirige según el tipo de usuario
+            console.log("Grado del usuario:", user.grade); // Log para ver el grado
+
+            if (user.grade === 'master' || user.grade === '0') { // Verifica el valor correcto de grado
                 navigate('/admin');
             } else {
                 navigate('/home', { state: { userGrade: user.grade } });

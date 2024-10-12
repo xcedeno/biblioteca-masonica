@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { db, storage } from '../utils/firebase'; // Importa Firebase storage
-import { collection, addDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // Importa métodos de Firebase Storage
+import { supabase } from '../utils/supabaseClient'; 
 import { useNavigate } from 'react-router-dom';
+import { grades } from '../utils/grades'; // Importa los grados
 import {
     Drawer,
     List,
@@ -12,7 +11,8 @@ import {
     AppBar,
     Toolbar,
     Typography,
-    Divider
+    Divider,
+    CircularProgress
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import './AdminPage.css';
@@ -21,78 +21,61 @@ const AdminPage = () => {
     const [newUsername, setNewUsername] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [newGrade, setNewGrade] = useState('1'); // Default to Aprendiz (1)
-    const [fullName, setFullName] = useState(''); // State for full name
-    const [profileImage, setProfileImage] = useState(null); // State para la imagen de perfil
-    const [imagePreview, setImagePreview] = useState(null); // State para la vista previa de la imagen
+    const [fullName, setFullName] = useState('');
+    //const [profileImage, setProfileImage] = useState(null);
     const [users, setUsers] = useState([]);
-    const [drawerOpen, setDrawerOpen] = useState(false); // State for drawer open/close
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-
     useEffect(() => {
-        if (!currentUser || currentUser.grado !== "0") {
-            alert("Acceso denegado. No tienes permisos para acceder a esta página.");
-            navigate('/home');
-        } else {
-            fetchUsers();
-        }
-    }, [currentUser, navigate]);
+        fetchUsers();
+    }, []);
 
     const fetchUsers = async () => {
+        setLoading(true);
         try {
-            const querySnapshot = await getDocs(collection(db, 'usuarios'));
-            const usersList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setUsers(usersList);
+            const { data, error } = await supabase.from('users').select('*');
+            if (error) throw error;
+            setUsers(data);
         } catch (error) {
-            console.error('Error al obtener los usuarios: ', error);
+            console.error('Error fetching users:', error);
             alert('Hubo un error al obtener los usuarios');
+        } finally {
+            setLoading(false);
         }
-    };
-
-    // Manejo de subida de imagen a Firebase Storage
-    const uploadImage = async (file) => {
-        if (!file) return null;
-        const storageRef = ref(storage, `profileImages/${file.name}`);
-        await uploadBytes(storageRef, file);
-        const downloadURL = await getDownloadURL(storageRef);
-        return downloadURL;
     };
 
     const handleCreateUser = async (e) => {
         e.preventDefault();
         try {
-            // Subir imagen de perfil si está seleccionada
-            const profileImageUrl = profileImage ? await uploadImage(profileImage) : null;
-
-            await addDoc(collection(db, 'usuarios'), {
-                username: newUsername,
-                password: newPassword,
-                grade: newGrade,
-                fullName: fullName, // Include full name
-                profileImage: profileImageUrl, // URL de la imagen de perfil
-                isMaster: newGrade === "0"
-            });
+            const { error } = await supabase.from('users').insert([
+                {
+                    username: newUsername,
+                    password: newPassword, 
+                    grade: newGrade, // Guardamos el número correspondiente al grado
+                    fullName: fullName,
+                    //profileImage: profileImage
+                }
+            ]);
+            if (error) throw error;
             alert('Usuario creado exitosamente');
-            setNewUsername('');
-            setNewPassword('');
-            setFullName('');
-            setProfileImage(null); // Limpiar el input de imagen
-            setImagePreview(null); // Limpiar la vista previa
+            resetForm();
             fetchUsers();
         } catch (error) {
-            console.error('Error al crear el usuario: ', error);
+            console.error('Error creating user:', error);
             alert('Hubo un error al crear el usuario');
         }
     };
 
     const handleDeleteUser = async (userId) => {
         try {
-            await deleteDoc(doc(db, 'usuarios', userId));
+            const { error } = await supabase.from('users').delete().eq('id', userId);
+            if (error) throw error;
             alert('Usuario eliminado exitosamente');
             fetchUsers();
         } catch (error) {
-            console.error('Error al eliminar el usuario: ', error);
+            console.error('Error deleting user:', error);
             alert('Hubo un error al eliminar el usuario');
         }
     };
@@ -102,6 +85,13 @@ const AdminPage = () => {
         navigate('/login');
     };
 
+    const resetForm = () => {
+        setNewUsername('');
+        setNewPassword('');
+        setFullName('');
+        //setProfileImage(null);
+    };
+
     const toggleDrawer = (open) => (event) => {
         if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
             return;
@@ -109,108 +99,29 @@ const AdminPage = () => {
         setDrawerOpen(open);
     };
 
-    const handleMenuClick = (option) => {
-        switch (option) {
-            case 'addUser':
-                navigate('/admin');
-                break;
-            case 'addCategory':
-                navigate('/home');
-                break;
-            case 'addBook':
-                alert('Ir a agregar libro');
-                break;
-            default:
-                break;
-        }
-        setDrawerOpen(false);
-    };
-
-    const grades = [
-        { value: '1', label: 'Aprendiz' },
-        { value: '2', label: 'Compañero' },
-        { value: '3', label: 'Maestro' },
-        { value: '4', label: 'Maestro Secreto' },
-        { value: '5', label: 'Maestro Perfecto' },
-        { value: '6', label: 'Secretario Íntimo' },
-        { value: '7', label: 'Preboste y Juez' },
-        { value: '8', label: 'Intendente de los Edificios' },
-        { value: '9', label: 'Maestro Elegido de los Nueve' },
-        { value: '10', label: 'Ilustre Elegido de los Quince' },
-        { value: '11', label: 'Sublime Caballero Elegido' },
-        { value: '12', label: 'Gran Maestro Arquitecto' },
-        { value: '13', label: 'Real Arco de Salomón' },
-        { value: '14', label: 'Gran Elegido, Perfecto y Sublime Masón' },
-        { value: '15', label: 'Caballero de Oriente' },
-        { value: '16', label: 'Príncipe de Jerusalén' },
-        { value: '17', label: 'Caballero de Oriente y Occidente' },
-        { value: '18', label: 'Soberano Príncipe Rosacruz' },
-        { value: '19', label: 'Gran Pontífice' },
-        { value: '20', label: 'Venerable Gran Maestro' },
-        { value: '21', label: 'Noaquita o Caballero Prusiano' },
-        { value: '22', label: 'Caballero Real Hacha' },
-        { value: '23', label: 'Jefe del Tabernáculo' },
-        { value: '24', label: 'Príncipe del Tabernáculo' },
-        { value: '25', label: 'Caballero de la Serpiente de Bronce' },
-        { value: '26', label: 'Príncipe de la Misericordia' },
-        { value: '27', label: 'Caballero Comendador del Templo' },
-        { value: '28', label: 'Príncipe Adepto Real' },
-        { value: '29', label: 'Gran Escocés de San Andrés' },
-        { value: '30', label: 'Caballero Kadosh' },
-        { value: '31', label: 'Gran Inspector Inquisidor Comendador' },
-        { value: '32', label: 'Sublime Príncipe del Real Secreto' },
-        { value: '33', label: 'Soberano Gran Inspector General' },
-    ];
-
-    // Función para manejar el cambio de imagen
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setProfileImage(file);
-            setImagePreview(URL.createObjectURL(file)); // Crea la vista previa
-        } else {
-            setProfileImage(null);
-            setImagePreview(null); // Limpiar vista previa si no hay archivo
-        }
-    };
-
     return (
         <div className="container">
-            {/* AppBar con el botón de menú */}
             <AppBar position="static">
                 <Toolbar style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <IconButton
-                        edge="start"
-                        color="inherit"
-                        aria-label="menu"
-                        onClick={toggleDrawer(true)}
-                    >
+                    <IconButton edge="start" color="inherit" aria-label="menu" onClick={toggleDrawer(true)}>
                         <MenuIcon />
                     </IconButton>
-                    
-                </Toolbar>
-                <Typography variant="h6" style={{ flexGrow: 1, textAlign: 'center' }}>
+                    <Typography variant="h6" style={{ flexGrow: 1, textAlign: 'center' }}>
                         Panel de Administración
                     </Typography>
-                
+                </Toolbar>
             </AppBar>
 
-            {/* Drawer de navegación */}
             <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
-                <div
-                    role="presentation"
-                    onClick={toggleDrawer(false)}
-                    onKeyDown={toggleDrawer(false)}
-                    style={{ width: 250 }}
-                >
+                <div role="presentation" onClick={toggleDrawer(false)} onKeyDown={toggleDrawer(false)} style={{ width: 250 }}>
                     <List>
-                        <ListItem button onClick={() => handleMenuClick('addUser')}>
+                        <ListItem button onClick={() => navigate('/admin')}>
                             <ListItemText primary="Agregar Usuario" />
                         </ListItem>
-                        <ListItem button onClick={() => handleMenuClick('addCategory')}>
+                        <ListItem button onClick={() => navigate('/home')}>
                             <ListItemText primary="Agregar Categoría" />
                         </ListItem>
-                        <ListItem button onClick={() => handleMenuClick('addBook')}>
+                        <ListItem button onClick={() => alert('Ir a agregar libro')}>
                             <ListItemText primary="Agregar Libro" />
                         </ListItem>
                     </List>
@@ -223,25 +134,9 @@ const AdminPage = () => {
                 </div>
             </Drawer>
 
-            {/* Contenido Principal */}
             <div className="content">
                 <form onSubmit={handleCreateUser} className="create-user-form">
                     <h2>Crear Nuevo Usuario</h2>
-                    {/* Input para cargar la imagen de perfil */}
-                <label>Imagen de perfil:</label>
-                <div>
-                    <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange} // Manejo del cambio de imagen
-                    />
-                </div>
-                {imagePreview && (
-                    <div>
-                        <h4>Vista Previa de la Imagen:</h4>
-                        <img src={imagePreview} alt="Vista previa" style={{ width: '100px', height: '100px' }} />
-                    </div>
-                )}
                     <input
                         type="text"
                         placeholder="Nuevo nombre de usuario"
@@ -274,34 +169,38 @@ const AdminPage = () => {
                 </form>
 
                 <h2>Lista de Usuarios</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nombre de Usuario</th>
-                            <th>Nombre Completo</th>
-                            <th>Grado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {users.map((user) => (
-                            <tr key={user.id}>
-                                <td>{user.username}</td>
-                                <td>{user.fullName}</td>
-                                <td>{grades.find(grade => grade.value === user.grade)?.label}</td>
-                                <td>
-                                    <button className='edit-button'>Editar</button>
-                                    <button
-                                        className='delete-button'
-                                        onClick={() => handleDeleteUser(user.id)}
-                                    >
-                                        Eliminar
-                                    </button>
-                                </td>
+                {loading ? (
+                    <CircularProgress />
+                ) : (
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nombre de Usuario</th>
+                                <th>Nombre Completo</th>
+                                <th>Grado</th>
+                                <th>Acciones</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {users.map((user) => (
+                                <tr key={user.id}>
+                                    <td>{user.username}</td>
+                                    <td>{user.fullName}</td>
+                                    <td>{grades.find(grade => grade.value === user.grade)?.label}</td>
+                                    <td>
+                                        <button className='edit-button'>Editar</button>
+                                        <button
+                                            className='delete-button'
+                                            onClick={() => handleDeleteUser(user.id)}
+                                        >
+                                            Eliminar
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
             </div>
         </div>
     );
