@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../utils/supabaseClient'; 
 import { useNavigate } from 'react-router-dom';
-import { grades } from '../utils/grades'; // Importa los grados
+import { grades } from '../utils/grades'; 
 import {
-    Drawer,
+    Grid,
     List,
     ListItem,
     ListItemText,
     IconButton,
-    AppBar,
-    Toolbar,
     Typography,
     Divider,
-    CircularProgress
+    CircularProgress,
+    Button,
+    TextField,
+    Select,
+    MenuItem,
+    Container,
+    Paper,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import './AdminPage.css';
@@ -20,11 +24,9 @@ import './AdminPage.css';
 const AdminPage = () => {
     const [newUsername, setNewUsername] = useState('');
     const [newPassword, setNewPassword] = useState('');
-    const [newGrade, setNewGrade] = useState('1'); // Default to Aprendiz (1)
+    const [newGrade, setNewGrade] = useState('1'); 
     const [fullName, setFullName] = useState('');
-    //const [profileImage, setProfileImage] = useState(null);
     const [users, setUsers] = useState([]);
-    const [drawerOpen, setDrawerOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
@@ -53,9 +55,8 @@ const AdminPage = () => {
                 {
                     username: newUsername,
                     password: newPassword, 
-                    grade: newGrade, // Guardamos el número correspondiente al grado
+                    grade: newGrade, 
                     fullName: fullName,
-                    //profileImage: profileImage
                 }
             ]);
             if (error) throw error;
@@ -80,129 +81,118 @@ const AdminPage = () => {
         }
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem('currentUser');
-        navigate('/login');
-    };
-
     const resetForm = () => {
         setNewUsername('');
         setNewPassword('');
         setFullName('');
-        //setProfileImage(null);
-    };
-
-    const toggleDrawer = (open) => (event) => {
-        if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
-            return;
-        }
-        setDrawerOpen(open);
     };
 
     return (
-        <div className="container">
-            <AppBar position="static">
-                <Toolbar style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <IconButton edge="start" color="inherit" aria-label="menu" onClick={toggleDrawer(true)}>
-                        <MenuIcon />
-                    </IconButton>
-                    <Typography variant="h6" style={{ flexGrow: 1, textAlign: 'center' }}>
-                        Panel de Administración
-                    </Typography>
-                </Toolbar>
-            </AppBar>
+        <Container maxWidth="lg" className="admin-container">
+            <Typography variant="h4" align="center" gutterBottom>
+                Panel de Administración
+            </Typography>
 
-            <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
-                <div role="presentation" onClick={toggleDrawer(false)} onKeyDown={toggleDrawer(false)} style={{ width: 250 }}>
-                    <List>
-                        <ListItem button onClick={() => navigate('/admin')}>
-                            <ListItemText primary="Agregar Usuario" />
-                        </ListItem>
-                        <ListItem button onClick={() => navigate('/home')}>
-                            <ListItemText primary="Agregar Categoría" />
-                        </ListItem>
-                        <ListItem button onClick={() => alert('Ir a agregar libro')}>
-                            <ListItemText primary="Agregar Libro" />
-                        </ListItem>
-                    </List>
-                    <Divider />
-                    <List>
-                        <ListItem button onClick={handleLogout}>
-                            <ListItemText primary="Cerrar Sesión" />
-                        </ListItem>
-                    </List>
-                </div>
-            </Drawer>
+            {/* Formulario de Creación de Usuario */}
+            <Grid container spacing={3}>
+                <Grid item xs={12} sm={6} md={4}>
+                    <Paper elevation={3} style={{ padding: '20px' }}>
+                        <form onSubmit={handleCreateUser}>
+                            <Typography variant="h6" gutterBottom>
+                                Crear Nuevo Usuario
+                            </Typography>
+                            <TextField
+                                fullWidth
+                                margin="normal"
+                                label="Nuevo nombre de usuario"
+                                value={newUsername}
+                                onChange={(e) => setNewUsername(e.target.value)}
+                                required
+                            />
+                            <TextField
+                                fullWidth
+                                margin="normal"
+                                label="Nueva contraseña"
+                                type="password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                required
+                            />
+                            <TextField
+                                fullWidth
+                                margin="normal"
+                                label="Nombre completo"
+                                value={fullName}
+                                onChange={(e) => setFullName(e.target.value)}
+                                required
+                            />
+                            <Select
+                                fullWidth
+                                margin="normal"
+                                value={newGrade}
+                                onChange={(e) => setNewGrade(e.target.value)}
+                                displayEmpty
+                            >
+                                {grades.map((grade) => (
+                                    <MenuItem key={grade.value} value={grade.value}>
+                                        {grade.label}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                            <Button variant="contained" color="primary" type="submit" fullWidth>
+                                Crear Usuario
+                            </Button>
+                        </form>
+                    </Paper>
+                </Grid>
 
-            <div className="content">
-                <form onSubmit={handleCreateUser} className="create-user-form">
-                    <h2>Crear Nuevo Usuario</h2>
-                    <input
-                        type="text"
-                        placeholder="Nuevo nombre de usuario"
-                        value={newUsername}
-                        onChange={(e) => setNewUsername(e.target.value)}
-                        required
-                    />
-                    <input
-                        type="password"
-                        placeholder="Nueva contraseña"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        required
-                    />
-                    <input
-                        type="text"
-                        placeholder="Nombre completo"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        required
-                    />
-                    <select value={newGrade} onChange={(e) => setNewGrade(e.target.value)}>
-                        {grades.map((grade) => (
-                            <option key={grade.value} value={grade.value}>
-                                {grade.label}
-                            </option>
-                        ))}
-                    </select>
-                    <button type="submit">Crear Usuario</button>
-                </form>
-
-                <h2>Lista de Usuarios</h2>
-                {loading ? (
-                    <CircularProgress />
-                ) : (
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Nombre de Usuario</th>
-                                <th>Nombre Completo</th>
-                                <th>Grado</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {users.map((user) => (
-                                <tr key={user.id}>
-                                    <td>{user.username}</td>
-                                    <td>{user.fullName}</td>
-                                    <td>{grades.find(grade => grade.value === user.grade)?.label}</td>
-                                    <td>
-                                        <button className='edit-button'>Editar</button>
-                                        <button
-                                            className='delete-button'
-                                            onClick={() => handleDeleteUser(user.id)}
-                                        >
-                                            Eliminar
-                                        </button>
-                                    </td>
+                {/* Lista de Usuarios */}
+                <Grid item xs={12} sm={6} md={8}>
+                    <Typography variant="h6">Lista de Usuarios</Typography>
+                    {loading ? (
+                        <CircularProgress />
+                    ) : (
+                        <table className="user-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre de Usuario</th>
+                                    <th>Nombre Completo</th>
+                                    <th>Grado</th>
+                                    <th>Acciones</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
-        </div>
+                            </thead>
+                            <tbody>
+                                {users.map((user) => (
+                                    <tr key={user.id}>
+                                        <td>{user.username}</td>
+                                        <td>{user.fullName}</td>
+                                        <td>{grades.find(grade => grade.value === user.grade)?.label}</td>
+                                        <td>
+                                            <Button 
+                                                variant="outlined" 
+                                                color="primary" 
+                                                size="small" 
+                                                style={{ marginRight: '10px' }}
+                                            >
+                                                Editar
+                                            </Button>
+                                            <Button
+                                                variant="outlined"
+                                                color="secondary"
+                                                size="small"
+                                                onClick={() => handleDeleteUser(user.id)}
+                                            >
+                                                Eliminar
+                                            </Button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </Grid>
+            </Grid>
+        </Container>
     );
 };
 
