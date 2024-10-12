@@ -13,8 +13,18 @@
     text-align: left;
 }
 
-@media only screen and (max-width: 600px) {
-    .user-table th, .user-table td {
-        padding: 8px;
+.MuiButton-root {
+    margin-bottom: 10px;
+}
+
+@media (max-width: 600px) {
+    .admin-container {
+        padding: 10px;
+    }
+    .user-table {
+        font-size: 14px;
+    }
+    .MuiButton-root {
+        width: 100%;
     }
 }

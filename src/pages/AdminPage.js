@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../utils/supabaseClient'; 
-import { grades } from '../utils/grades'; 
+import { supabase } from '../utils/supabaseClient';
+import { grades } from '../utils/grades';
 import {
     Grid,
     Typography,
@@ -11,16 +11,20 @@ import {
     MenuItem,
     Container,
     Paper,
+    FormControl,
+    InputLabel,
 } from '@mui/material';
+import { Drawer, Menu } from 'antd';
 import './AdminPage.css';
 
 const AdminPage = () => {
     const [newUsername, setNewUsername] = useState('');
     const [newPassword, setNewPassword] = useState('');
-    const [newGrade, setNewGrade] = useState('1'); 
+    const [newGrade, setNewGrade] = useState('1');
     const [fullName, setFullName] = useState('');
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [drawerVisible, setDrawerVisible] = useState(false);
 
     useEffect(() => {
         fetchUsers();
@@ -46,8 +50,8 @@ const AdminPage = () => {
             const { error } = await supabase.from('users').insert([
                 {
                     username: newUsername,
-                    password: newPassword, 
-                    grade: newGrade, 
+                    password: newPassword,
+                    grade: newGrade,
                     fullName: fullName,
                 }
             ]);
@@ -79,13 +83,44 @@ const AdminPage = () => {
         setFullName('');
     };
 
+    const showDrawer = () => {
+        setDrawerVisible(true);
+    };
+
+    const closeDrawer = () => {
+        setDrawerVisible(false);
+    };
+
     return (
         <Container maxWidth="lg" className="admin-container">
             <Typography variant="h4" align="center" gutterBottom>
                 Panel de Administración
             </Typography>
 
-            {/* Formulario de Creación de Usuario */}
+            <Button variant="contained" color="primary" onClick={showDrawer}>
+                Menú
+            </Button>
+
+            <Drawer
+                title="Menú de Opciones"
+                placement="left"
+                closable={true}
+                onClose={closeDrawer}
+                visible={drawerVisible}
+                width={200}
+                bodyStyle={{ padding: 0 }}
+            >
+                <Menu
+                    mode="inline"
+                    defaultSelectedKeys={['1']}
+                    style={{ height: '100%', borderRight: 0 }}
+                >
+                    <Menu.Item key="1">Opción 1</Menu.Item>
+                    <Menu.Item key="2">Opción 2</Menu.Item>
+                    <Menu.Item key="3">Opción 3</Menu.Item>
+                </Menu>
+            </Drawer>
+
             <Grid container spacing={3}>
                 <Grid item xs={12} sm={6} md={4}>
                     <Paper elevation={3} style={{ padding: '20px' }}>
@@ -118,19 +153,22 @@ const AdminPage = () => {
                                 onChange={(e) => setFullName(e.target.value)}
                                 required
                             />
-                            <Select
-                                fullWidth
-                                margin="normal"
-                                value={newGrade}
-                                onChange={(e) => setNewGrade(e.target.value)}
-                                displayEmpty
-                            >
-                                {grades.map((grade) => (
-                                    <MenuItem key={grade.value} value={grade.value}>
-                                        {grade.label}
-                                    </MenuItem>
-                                ))}
-                            </Select>
+                            <FormControl fullWidth margin="normal">
+                                <InputLabel id="grade-label">Grado</InputLabel>
+                                <Select
+                                    labelId="grade-label"
+                                    value={newGrade}
+                                    onChange={(e) => setNewGrade(e.target.value)}
+                                    displayEmpty
+                                    required
+                                >
+                                    {grades.map((grade) => (
+                                        <MenuItem key={grade.value} value={grade.value}>
+                                            {grade.label}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
                             <Button variant="contained" color="primary" type="submit" fullWidth>
                                 Crear Usuario
                             </Button>
@@ -138,7 +176,6 @@ const AdminPage = () => {
                     </Paper>
                 </Grid>
 
-                {/* Lista de Usuarios */}
                 <Grid item xs={12} sm={6} md={8}>
                     <Typography variant="h6">Lista de Usuarios</Typography>
                     {loading ? (

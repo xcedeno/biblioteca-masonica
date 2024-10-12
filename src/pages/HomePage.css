@@ -66,6 +66,7 @@
   font-size: 1.2rem;
   text-align: center;
   width: 100%;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 /* Hover en la tarjeta para escalar la imagen y eliminar la transparencia */
