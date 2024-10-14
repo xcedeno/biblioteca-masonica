@@ -25,10 +25,15 @@ const AdminPage = () => {
     const [loading, setLoading] = useState(true);
     const [drawerVisible, setDrawerVisible] = useState(true);
     const navigate = useNavigate();
-    const location = useLocation(); // Para obtener la ruta actual
+    const location = useLocation();
+
+    // Agregar estado para el usuario actual
+    const [currentUser, setCurrentUser] = useState(null);
+    const [userGrade, setUserGrade] = useState('');
 
     useEffect(() => {
         fetchUsers();
+        fetchCurrentUser(); // Llamar a la función para obtener el usuario actual
     }, []);
 
     const fetchUsers = async () => {
@@ -42,6 +47,25 @@ const AdminPage = () => {
             alert('Hubo un error al obtener los usuarios');
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Nueva función para obtener el usuario actual
+    const fetchCurrentUser = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            const user = session.user;
+            setCurrentUser(user);
+            const { data: userData, error } = await supabase
+                .from('users')
+                .select('grade')
+                .eq('id', user.id)
+                .single(); // Obtener solo un usuario
+            if (error) {
+                console.error('Error fetching current user grade:', error);
+            } else {
+                setUserGrade(userData?.grade); // Guardar el grado del usuario
+            }
         }
     };
 
@@ -99,7 +123,6 @@ const AdminPage = () => {
         setDrawerVisible(false);
     };
 
-    // Solo mostrar el contenido de "Crear Usuarios" si la ruta es "/admin"
     const shouldShowCreateUserContent = location.pathname === '/admin';
 
     return (
@@ -121,6 +144,13 @@ const AdminPage = () => {
                 width={200}
                 style={{ padding: 0 }}
             >
+                {/* Mostrar información del usuario actual */}
+                {currentUser && (
+                    <div style={{ padding: '10px' }}>
+                        <Typography variant="h6">Bienvenido, {currentUser.email}</Typography>
+                        <Typography variant="body2">Grado: {userGrade}</Typography>
+                    </div>
+                )}
                 <Menu
                     mode="inline"
                     defaultSelectedKeys={['1']}
@@ -138,7 +168,6 @@ const AdminPage = () => {
                 </Menu>
             </Drawer>
 
-            {/* Mostrar contenido de Crear Usuarios si la ruta es "/admin" */}
             {shouldShowCreateUserContent && (
                 <Grid2 container spacing={3}>
                     <Grid2 item xs={12} sm={6} md={4}>
