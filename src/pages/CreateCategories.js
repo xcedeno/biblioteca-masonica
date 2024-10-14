@@ -1,13 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../utils/supabaseClient'; // Supabase instance
-import { Button, TextField, Select, MenuItem, InputLabel, FormControl } from '@mui/material';
-import { grades } from '../utils/grades'; // Importar los grados
+import {
+    Button, TextField, Select, MenuItem, InputLabel, FormControl, Table,
+    TableBody, TableCell, TableHead, TableRow, Paper, IconButton
+} from '@mui/material';
+import { grades } from '../utils/grades';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 
 const CreateCategories = () => {
     const [categoryName, setCategoryName] = useState('');
     const [image, setImage] = useState(null);
     const [minGrade, setMinGrade] = useState('aprendiz');
     const [imagePreview, setImagePreview] = useState('');
+    const [categories, setCategories] = useState([]);
+    const [editingCategory, setEditingCategory] = useState(null); // Track editing
+
+
+    useEffect(() => {
+        fetchCategories();
+    }, []);
+
+
+     // Fetch categories from Supabase
+    const fetchCategories = async () => {
+        const { data, error } = await supabase
+            .from('categories')
+            .select('*');
+        
+        if (error) {
+            console.error('Error fetching categories:', error);
+        } else {
+            setCategories(data);
+        }
+    };
 
     // Función para obtener el UID del usuario maestro
     const fetchMasterUser = async () => {
@@ -123,47 +149,97 @@ const CreateCategories = () => {
         }
     };
 
+     // Delete category function
+     const handleDeleteCategory = async (categoryId) => {
+        const { error } = await supabase.from('categories').delete().eq('id', categoryId);
+        if (error) {
+            console.error('Error deleting category:', error.message);
+        } else {
+            alert('Categoría eliminada exitosamente.');
+            fetchCategories(); // Refresh the categories after deletion
+        }
+    };
+
+    // Edit category function
+    const handleEditCategory = (category) => {
+        setCategoryName(category.name);
+        setMinGrade(category.min_grade);
+        setImagePreview(category.image_url);
+        setEditingCategory(category); // Set the category to be edited
+    };
+
+
     return (
-        <form onSubmit={handleCreateCategory}>
-            <TextField
-                label="Nombre de la Categoría"
-                value={categoryName}
-                onChange={(e) => setCategoryName(e.target.value)}
-                fullWidth
-                margin="normal"
-                required
-            />
-            <FormControl fullWidth margin="normal">
-                <InputLabel>Grado Mínimo</InputLabel>
-                <Select
-                    value={minGrade}
-                    onChange={(e) => setMinGrade(e.target.value)}
+        <>
+            <form onSubmit={handleCreateCategory}>
+                <TextField
+                    label="Nombre de la Categoría"
+                    value={categoryName}
+                    onChange={(e) => setCategoryName(e.target.value)}
+                    fullWidth
+                    margin="normal"
                     required
+                />
+                <FormControl fullWidth margin="normal">
+                    <InputLabel>Grado Mínimo</InputLabel>
+                    <Select
+                        value={minGrade}
+                        onChange={(e) => setMinGrade(e.target.value)}
+                        required
+                    >
+                        {grades.map((grade) => (
+                            <MenuItem key={grade.value} value={grade.value}>
+                                {grade.label}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+                <input type="file" accept="image/*" onChange={handleImageUpload} />
+                {imagePreview && <img src={imagePreview} alt="Preview" style={{ width: '100%', marginTop: '10px' }} />}
+                <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                    style={{ marginTop: '20px' }}
                 >
-                    {grades.map((grade) => (
-                        <MenuItem key={grade.value} value={grade.value}>
-                            {grade.label}
-                        </MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
-            <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                required
-            />
-            {imagePreview && <img src={imagePreview} alt="Preview" style={{ width: '100%', marginTop: '10px' }} />}
-            <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                fullWidth
-                style={{ marginTop: '20px' }}
-            >
-                Crear Categoría
-            </Button>
-        </form>
+                    {editingCategory ? 'Actualizar Categoría' : 'Crear Categoría'}
+                </Button>
+            </form>
+
+            <Paper style={{ marginTop: '30px', padding: '20px' }}>
+                <h2>Categorías Creadas</h2>
+                <Table>
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>Nombre</TableCell>
+                            <TableCell>Grado Mínimo</TableCell>
+                            <TableCell>Imagen</TableCell>
+                            <TableCell>Acciones</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {categories.map((category) => (
+                            <TableRow key={category.id}>
+                                <TableCell>{category.name}</TableCell>
+                                <TableCell>{category.min_grade}</TableCell>
+                                <TableCell>
+                                    <img src={category.image_url} alt={category.name} style={{ width: '100px' }} />
+                                </TableCell>
+                                <TableCell>
+                                    <IconButton onClick={() => handleEditCategory(category)}>
+                                        <EditIcon />
+                                    </IconButton>
+                                    <IconButton onClick={() => handleDeleteCategory(category.id)}>
+                                        <DeleteIcon />
+                                    </IconButton>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </Paper>
+        </>
     );
 };
 
