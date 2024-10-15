@@ -21,8 +21,7 @@ const CreateCategories = () => {
         fetchCategories();
     }, []);
 
-
-     // Fetch categories from Supabase
+    // Fetch categories from Supabase
     const fetchCategories = async () => {
         const { data, error } = await supabase
             .from('categories')
@@ -60,97 +59,74 @@ const CreateCategories = () => {
 
     const handleCreateCategory = async (e) => {
         e.preventDefault();
-
+    
         if (!categoryName || !image) {
             alert('Por favor, llena todos los campos y selecciona una imagen.');
             return;
         }
-
+    
         const masterUID = await fetchMasterUser();
         if (!masterUID) {
             alert('No se pudo obtener el usuario maestro.');
             return;
         }
-
-        // Upload image to Supabase storage
-                    const { data: uploadData, error: uploadError } = await supabase
-                .storage
-                .from('images')
-                .upload(`categories/${image.name}`, image);
-
-            if (uploadError) {
-                console.error('Error uploading image:', uploadError.message);
-                alert(`Error al subir la imagen: ${uploadError.message}`);
-                return;
-            }
-
-            // Asegúrate de que uploadData esté definido
-            if (!uploadData) {
-                console.error('Upload data is null:', uploadData);
-                alert('No se pudo obtener la información de la carga.');
-                return;
-            }
-
-            // Obtener la URL pública de la imagen cargada
-            const { data: { publicURL }, error: publicUrlError } = supabase
-                .storage
-                .from('images')
-                .getPublicUrl(`categories/${image.name}`);
-
-            if (publicUrlError) {
-                console.error('Error getting public URL:', publicUrlError.message);
-                alert(`Error al obtener la URL de la imagen: ${publicUrlError.message}`);
-                return;
-            }
-
-            // Verifica qué contiene uploadData
-            console.log('Upload Data:', uploadData); // Agrega esta línea
-
-            // Verifica que uploadData tenga una propiedad path
-            if (uploadData && uploadData.path) {
-                const { data: { publicURL }, error: publicUrlError } = supabase
-                    .storage
-                    .from('images')
-                    .getPublicUrl(uploadData.path);
-
-                if (publicUrlError) {
-                    console.error('Error getting public URL:', publicUrlError.message);
-                    alert(`Error al obtener la URL de la imagen: ${publicUrlError.message}`);
-                    return;
-                }
-
-                console.log('Public URL:', publicURL); // Verifica la URL pública
-            } else {
-                console.error('Upload data does not contain a valid path');
-            }
-
-
-
-
-        // Insert the category with the image URL
+    
+        // Formatear el nombre de la categoría para el nombre del archivo
+        const formattedCategoryName = categoryName.toLowerCase().replace(/\s+/g, '-');
+        const imageName = `${formattedCategoryName}.${image.name.split('.').pop()}`; // Extensión del archivo
+    
+        // Subir la imagen al bucket de Supabase (ignorar el valor de data si no lo usas)
+        const { error: uploadError } = await supabase
+            .storage
+            .from('images')
+            .upload(`categories/${imageName}`, image); // Ruta en el bucket y archivo a subir
+    
+        if (uploadError) {
+            console.error('Error uploading image:', uploadError.message);
+            alert(`Error al subir la imagen: ${uploadError.message}`);
+            return;
+        }
+    
+        // Obtener la URL pública de la imagen cargada
+        const { data: { publicURL }, error: publicUrlError } = supabase
+            .storage
+            .from('images')
+            .getPublicUrl(`categories/${imageName}`);
+    
+        if (publicUrlError) {
+            console.error('Error getting public URL:', publicUrlError.message);
+            alert(`Error al obtener la URL de la imagen: ${publicUrlError.message}`);
+            return;
+        }
+    
+        // Insertar la categoría con la URL de la imagen
         const { error: insertError } = await supabase
             .from('categories')
             .insert([{
                 name: categoryName,
-                image_url: publicURL, // Use the public URL of the image
+                image_url: publicURL, // Guardar la URL pública de la imagen
                 min_grade: minGrade,
-                //id: masterUID // Usar el UID correcto
+                // id: masterUID // (Si necesitas el id del usuario maestro)
             }]);
-
+    
         if (insertError) {
             console.error('Error inserting category:', insertError.message);
             alert(`Error al crear la categoría: ${insertError.message}`);
         } else {
             alert('Categoría creada exitosamente.');
+            // Resetear los campos
             setCategoryName('');
             setImage(null);
             setImagePreview('');
             setMinGrade('aprendiz');
+            fetchCategories(); // Refrescar la lista de categorías
         }
     };
+    
+    
 
-     // Delete category function
-     const handleDeleteCategory = async (categoryId) => {
+    // Delete category function
+    const handleDeleteCategory = async (categoryId) => {
         const { error } = await supabase.from('categories').delete().eq('id', categoryId);
         if (error) {
             console.error('Error deleting category:', error.message);
@@ -167,7 +143,6 @@ const CreateCategories = () => {
         setImagePreview(category.image_url);
         setEditingCategory(category); // Set the category to be edited
     };
-
 
     return (
         <>
@@ -224,7 +199,11 @@ const CreateCategories = () => {
                                 <TableCell>{category.name}</TableCell>
                                 <TableCell>{category.min_grade}</TableCell>
                                 <TableCell>
-                                    <img src={category.image_url} alt={category.name} style={{ width: '100px' }} />
+                                                                <img 
+                                 src={`https://heznwurkghqymlilvzoy.supabase.co/storage/v1/object/public/images/categories/${category.name.toLowerCase()}.jpg`} 
+                                alt={category.name} style={{ width: '100px' }}
+                                />
+
                                 </TableCell>
                                 <TableCell>
                                     <IconButton onClick={() => handleEditCategory(category)}>
