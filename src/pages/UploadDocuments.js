@@ -27,35 +27,45 @@ const UploadDocuments = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
+  
     if (!fileUrl || !category || !minGrade) {
       setSnackbarMessage('Por favor, completa todos los campos.');
       setOpenSnackbar(true);
       return;
     }
-
+  
+    // Find the selected category by name to get its ID
+    const selectedCategory = categories.find(cat => cat.name === category);
+  
+    if (!selectedCategory) {
+      setSnackbarMessage('Categoría seleccionada no válida.');
+      setOpenSnackbar(true);
+      return;
+    }
+  
     // Guardar el enlace compartido de TeraBox en la base de datos de Supabase
     const documentData = {
       name: fileUrl.split('/').pop(), // Nombre del archivo
-      category,
+      category_id: selectedCategory.id, // Use category_id instead of category name
       minGrade,
       url: fileUrl // Enlace del archivo subido a TeraBox
     };
-
+  
     const { error: insertError } = await supabase.from('documents').insert([documentData]);
-
+  
     if (insertError) {
-      console.error('Error al insertar documento en la base de datos:', insertError);
+      console.error('Error al insertar documento en la base de datos:', insertError.message, insertError.details, insertError.hint);
       setSnackbarMessage('Error al guardar la información del documento.');
     } else {
       setSnackbarMessage('Documento registrado correctamente.');
     }
-
+  
     setOpenSnackbar(true); // Abrir snackbar para mostrar mensaje
     setFileUrl(''); // Limpiar campos
     setCategory('');
     setMinGrade('');
   };
+  
 
   return (
     <Container>
