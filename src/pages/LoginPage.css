@@ -1,33 +1,52 @@
-.home-page {
-    padding: 20px; /* Ajusta el espaciado alrededor de la página según sea necesario */
-  }
-  
-  .welcome-message {
-    margin-bottom: 20px;
-  }
-  
-  .categories {
-    display: flex;
-    flex-wrap: wrap; /* Permite que las tarjetas se ajusten en varias filas */
-    gap: 10px; /* Espacio entre las tarjetas */
-  }
-  
-  .category-card {
-    flex: 1 1 auto; /* Permite que la tarjeta crezca y se reduzca según el contenido */
-    max-width: 200px; /* Ancho máximo para la tarjeta */
-    text-align: center; /* Centrar el texto */
-    border: 1px solid #ccc; /* Opcional: agrega un borde */
-    border-radius: 8px; /* Opcional: agrega esquinas redondeadas */
-    overflow: hidden; /* Oculta el desbordamiento */
-    transition: transform 0.2s; /* Añadir animación en hover */
-  }
-  
-  .category-card:hover {
-    transform: scale(1.05); /* Escala la tarjeta al pasar el ratón */
-  }
-  
-  .category-card img {
-    width: 100%; /* La imagen ocupará el 100% del ancho del contenedor */
-    height: auto; /* Mantiene la proporción de la imagen */
-  }
-  
+/* LoginPage.css */
+
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh; /* Altura completa de la pantalla */
+  background-color: #f0f0f0; /* Fondo claro */
+}
+
+.masoneria-image {
+  width: 150px; /* Ajusta el tamaño de la imagen */
+  margin-bottom: 20px;
+}
+
+h2 {
+  margin-bottom: 20px;
+  font-size: 24px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 300px;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background-color: #007bff; /* Color azul interesante */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #0056b3; /* Color más oscuro al pasar el cursor */
+}

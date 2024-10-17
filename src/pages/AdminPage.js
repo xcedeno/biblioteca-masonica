@@ -236,32 +236,35 @@ const AdminPage = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {users.map((user) => (
-                                        <tr key={user.id}>
-                                            <td>{user.username}</td>
-                                            <td>{user.fullName}</td>
-                                            <td>{grades.find(grade => grade.value === user.grade)?.label}</td>
-                                            <td>
-                                                <Button 
-                                                    variant="outlined" 
-                                                    color="primary" 
-                                                    size="small" 
-                                                    style={{ marginRight: '10px' }}
-                                                >
-                                                    Editar
-                                                </Button>
-                                                <Button
-                                                    variant="outlined"
-                                                    color="secondary"
-                                                    size="small"
-                                                    onClick={() => handleDeleteUser(user.id)}
-                                                >
-                                                    Eliminar
-                                                </Button>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                {users
+                                    .filter(user => user.username !== 'master') // Excluir usuarios con grado 'master'
+                                    .map((user) => (
+                                    <tr key={user.id}>
+                                        <td>{user.username}</td>
+                                        <td>{user.fullName}</td>
+                                        <td>{grades.find(grade => grade.value === user.grade)?.label}</td>
+                                        <td>
+                                        <Button 
+                                            variant="outlined" 
+                                            color="primary" 
+                                            size="small" 
+                                            style={{ marginRight: '10px' }}
+                                        >
+                                            Editar
+                                        </Button>
+                                        <Button
+                                            variant="outlined"
+                                            color="secondary"
+                                            size="small"
+                                            onClick={() => handleDeleteUser(user.id)}
+                                        >
+                                            Eliminar
+                                        </Button>
+                                        </td>
+                                    </tr>
+                                ))}
                                 </tbody>
+
                             </table>
                         )}
                     </Grid2>

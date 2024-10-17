@@ -4,7 +4,7 @@ import { supabase } from '../utils/supabaseClient'; // Asegúrate de importar tu
 import grades from '../utils/grades'; // Importa los grados desde grades.js
 
 const UploadDocuments = () => {
-  const [file, setFile] = useState(null);
+  const [fileUrl, setFileUrl] = useState(''); // URL del archivo subido a TeraBox
   const [category, setCategory] = useState('');
   const [minGrade, setMinGrade] = useState('');
   const [categories, setCategories] = useState([]);
@@ -25,52 +25,34 @@ const UploadDocuments = () => {
     fetchCategories();
   }, []);
 
-  const handleFileChange = (event) => {
-    setFile(event.target.files[0]); // Almacenar el archivo seleccionado
-  };
-
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!file || !category || !minGrade) {
+    if (!fileUrl || !category || !minGrade) {
       setSnackbarMessage('Por favor, completa todos los campos.');
       setOpenSnackbar(true);
       return;
     }
 
-    // Subir el archivo a Supabase Storage
-    const { data, error } = await supabase.storage
-      .from('documents') // Nombre de tu bucket en Supabase
-      .upload(`uploads/${file.name}`, file); // Puedes cambiar la ruta si es necesario
+    // Guardar el enlace compartido de TeraBox en la base de datos de Supabase
+    const documentData = {
+      name: fileUrl.split('/').pop(), // Nombre del archivo
+      category,
+      minGrade,
+      url: fileUrl // Enlace del archivo subido a TeraBox
+    };
 
-    if (error) {
-      console.error('Error al subir el archivo:', error);
-      setSnackbarMessage('Error al subir el archivo.');
+    const { error: insertError } = await supabase.from('documents').insert([documentData]);
+
+    if (insertError) {
+      console.error('Error al insertar documento en la base de datos:', insertError);
+      setSnackbarMessage('Error al guardar la información del documento.');
     } else {
-      // Aquí puedes guardar los detalles del documento en tu base de datos, incluyendo la categoría y el grado mínimo
-      const documentData = {
-        name: file.name,
-        category,
-        minGrade,
-        url: data.Key // URL del archivo subido
-      };
-
-      // Supón que tienes una tabla llamada 'documents' para almacenar la información
-      const { error: insertError } = await supabase
-        .from('documents')
-        .insert([documentData]);
-
-      if (insertError) {
-        console.error('Error al insertar documento en la base de datos:', insertError);
-        setSnackbarMessage('Error al guardar la información del documento.');
-      } else {
-        setSnackbarMessage('Documento subido y registrado correctamente.');
-      }
+      setSnackbarMessage('Documento registrado correctamente.');
     }
 
     setOpenSnackbar(true); // Abrir snackbar para mostrar mensaje
-    // Limpiar el formulario
-    setFile(null);
+    setFileUrl(''); // Limpiar campos
     setCategory('');
     setMinGrade('');
   };
@@ -105,20 +87,22 @@ const UploadDocuments = () => {
           margin="normal"
           required
         >
-            {grades.map((grade) => (
-                            <MenuItem key={grade.value} value={grade.value}>
-                                {grade.label}
+          {grades.map((grade) => (
+            <MenuItem key={grade.value} value={grade.value}>
+              {grade.label}
             </MenuItem>
           ))}
         </TextField>
-        <input
-          type="file"
-          accept="application/pdf"
-          onChange={handleFileChange}
+        <TextField
+          label="URL del archivo (TeraBox)"
+          value={fileUrl}
+          onChange={(e) => setFileUrl(e.target.value)}
+          fullWidth
+          margin="normal"
           required
         />
         <Button type="submit" variant="contained" color="primary" style={{ marginTop: '16px' }}>
-          Subir Documento
+          Registrar Documento
         </Button>
       </form>
 
