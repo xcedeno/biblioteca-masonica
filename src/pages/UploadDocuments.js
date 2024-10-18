@@ -99,6 +99,20 @@ const UploadDocuments = () => {
     }
     setOpenSnackbar(true);
   };
+  // Función para extraer la ID de Google Drive
+const extractDriveId = (url) => {
+  const regex = /\/d\/(.+?)\//; // Expresión regular para encontrar la ID en la URL
+  const match = url.match(regex);
+  return match ? match[1] : null; // Si coincide, devuelve la ID, de lo contrario null
+};
+
+// Modificar el manejador de cambios en el campo URL del archivo
+const handleFileUrlChange = (e) => {
+  const fullUrl = e.target.value;
+  const driveId = extractDriveId(fullUrl); // Extraer la ID del enlace de Google Drive
+  setFileUrl(driveId); // Guardar solo la ID
+};
+
 
   const handleEdit = (id) => {
     // Aquí puedes implementar la lógica para editar un documento
@@ -151,9 +165,9 @@ const UploadDocuments = () => {
           ))}
         </TextField>
         <TextField
-          label="URL del archivo (TeraBox)"
+          label="URL del archivo (Google Drive)"
           value={fileUrl}
-          onChange={(e) => setFileUrl(e.target.value)}
+          onChange={handleFileUrlChange}
           fullWidth
           margin="normal"
           required
