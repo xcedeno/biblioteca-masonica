@@ -1,55 +1,58 @@
-import React, { useEffect, useState } from 'react';
-import arteBooks from '../utils/arteBooks'; // Importar los libros de arte
-import grades from '../utils/grades'; // Importar los grados
+import React, { useState, useEffect } from 'react';
+import { Container, Typography, Grid2 } from '@mui/material';
+import { supabase } from '../utils/supabaseClient';
+import BookCard from '../components/BookCard'; // Asegúrate de importar BookCard
 
-const ArtePage = () => {
-  const [userGrade, setUserGrade] = useState(null);
-  const [userName, setUserName] = useState('');
+const CategoryView = () => {
+  const [books, setBooks] = useState([]);
+  const [artCategory, setArtCategory] = useState(null);
 
+  // Obtener libros y la categoría de arte desde la base de datos
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('currentUser')); // Obtener el usuario desde localStorage
+    const fetchBooks = async () => {
+      const { data, error } = await supabase.from('documents').select('*');
+      if (error) {
+        console.error('Error al obtener libros:', error);
+      } else {
+        setBooks(data);
+      }
+    };
 
-    if (user) {
-      setUserGrade(user.grade); // Establecer el grado del usuario
-      setUserName(user.username || 'Usuario'); // Establecer el nombre del usuario
-    } else {
-      alert('No hay usuario autenticado.');
-      // Puedes redirigir a una página de inicio de sesión si lo deseas
-    }
+    const fetchArtCategory = async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('name', 'Arte'); // Asegúrate de que este filtro coincida con el nombre exacto de la categoría de "Arte"
+      
+      if (error) {
+        console.error('Error al obtener la categoría de arte:', error);
+      } else if (data.length > 0) {
+        setArtCategory(data[0]); // Suponiendo que solo hay una categoría de "Arte"
+      }
+    };
+
+    fetchBooks();
+    fetchArtCategory();
   }, []);
 
-  // Verifica si se está cargando la información del usuario
-  if (userGrade === null) {
-    return <p>Cargando...</p>;
-  }
-
-  // Obtener el orden de los grados desde grades.js
-  const gradeLevels = grades.map(grade => grade.value); // Extraer los valores de los grados
-
-  // Filtrar libros según el grado del usuario
-  const accessibleBooks = arteBooks.filter(book => {
-    return gradeLevels.indexOf(userGrade) >= gradeLevels.indexOf(book.grade);
-  });
-
   return (
-    <div className="genre-page">
-      <h2>Libros de Arte</h2>
-      <p>Bienvenido, {userName}!</p>
-      <div className="books-grid">
-        {accessibleBooks.length > 0 ? (
-          accessibleBooks.map((book, index) => (
-            <div key={index} className="book-card">
-              <img src={book.cover} alt={book.title} />
-              <h3>{book.title}</h3>
-              <p>{book.author}</p>
-            </div>
-          ))
-        ) : (
-          <p>No tienes acceso a libros en esta categoría.</p>
-        )}
-      </div>
-    </div>
+    <Container>
+      {artCategory && (
+        <div key={artCategory.id}>
+          <Typography variant="h4" gutterBottom>{artCategory.name}</Typography>
+          <Grid2 container spacing={2}>
+            {books
+              .filter(book => book.category_id === artCategory.id) // Filtrar libros por categoría de "Arte"
+              .map(book => (
+                <Grid2 item key={book.id}>
+                  <BookCard book={book} />
+                </Grid2>
+              ))}
+          </Grid2>
+        </div>
+      )}
+    </Container>
   );
 };
 
-export default ArtePage;
+export default CategoryView;

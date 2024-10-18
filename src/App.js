@@ -7,6 +7,7 @@ import AdminPage from './pages/AdminPage';
 import CreateCategories from './pages/CreateCategories';
 import UploadDocuments from './pages/UploadDocuments';
 import Arte from './categories/Arte';
+import PdfReaderModal from './components/PdfReaderModal';
 
 const App = () => {
   return (
@@ -14,6 +15,7 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/arte" element={<Arte />} />
+        <Route path="/pdf-reader" element={<PdfReaderModal />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         
